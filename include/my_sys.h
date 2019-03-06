@@ -181,9 +181,11 @@ extern char *my_strndup(const char *from, size_t length, myf MyFlags);
 #define my_large_page_sizes_length 8
 extern size_t my_large_page_sizes[my_large_page_sizes_length];
 extern void my_get_large_page_sizes(size_t sizes[]);
+extern size_t my_next_large_page_size(size_t sz, int *start);
 #else
 #define my_large_page_sizes_length 0
 #define my_get_large_page_sizes(A) do {} while(0)
+#define my_next_large_page_size(A,B) (0)
 #endif
 
 #ifdef HAVE_LARGE_PAGE_OPTION
