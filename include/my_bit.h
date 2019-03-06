@@ -38,6 +38,14 @@ static inline uint my_bit_log2(ulong value)
 }
 
 
+static inline uint my_bit_size_t_log2(size_t value)
+{
+  uint bit;
+  for (bit=0 ; value > 1 ; value>>=1, bit++) ;
+  return bit;
+}
+
+
 /*
 Count bits in 32bit integer
 
