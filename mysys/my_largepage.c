@@ -27,24 +27,10 @@
 
 static inline my_bool my_is_2pow(size_t n) { return !((n) & ((n) - 1)); }
 
-static uint my_get_large_page_size_int(void);
 static uchar* my_large_malloc_int(size_t *size, myf my_flags);
 static my_bool my_large_free_int(void *ptr, size_t size);
 
 #ifdef HAVE_LARGE_PAGE_OPTION
-
-/* Gets the size of large pages from the OS */
-
-uint my_get_large_page_size(void)
-{
-  uint size;
-  DBUG_ENTER("my_get_large_page_size");
-  
-  if (!(size = my_get_large_page_size_int()))
-    fprintf(stderr, "Warning: Failed to determine large page size\n");
-
-  DBUG_RETURN(size);
-}
 
 /*
   General large pages allocator.
@@ -88,29 +74,6 @@ void my_large_free(void *ptr, size_t size)
 #endif /* HAVE_LARGE_PAGE_OPTION */
 
 #ifdef HAVE_LINUX_LARGE_PAGES
-
-/* Linux-specific function to determine the size of large pages */
-
-uint my_get_large_page_size_int(void)
-{
-  MYSQL_FILE *f;
-  uint size = 0;
-  char buf[256];
-  DBUG_ENTER("my_get_large_page_size_int");
-
-  if (!(f= mysql_file_fopen(key_file_proc_meminfo, "/proc/meminfo",
-                            O_RDONLY, MYF(MY_WME))))
-    goto finish;
-
-  while (mysql_file_fgets(buf, sizeof(buf), f))
-    if (sscanf(buf, "Hugepagesize: %u kB", &size))
-      break;
-
-  mysql_file_fclose(f, MYF(MY_WME));
-  
-finish:
-  DBUG_RETURN(size * 1024);
-}
 
 /* Descending sort */
 
@@ -309,15 +272,17 @@ MAP_ANON but MAP_ANONYMOUS is marked "for compatibility" */
 #error unsupported mmap - no MAP_ANON{YMOUS}
 #endif
 
+static size_t my_large_page_size= 0;
+
 /* mmap-specific function to determine the size of large pages
 
 This is a fudge as we only use this to ensure that mmap allocations
 are of this size.
 */
 
-uint my_get_large_page_size_int(void)
+void my_get_large_page_size(void)
 {
-  return my_getpagesize();
+  my_large_page_size= my_getpagesize();
 }
 
 /* mmap(non-Linux) pages allocator  */
@@ -349,21 +314,22 @@ uchar* my_large_malloc_int(size_t *size, myf my_flags)
   }
   DBUG_RETURN(ptr);
 }
-
-#endif /* HAVE_MMAP && !HAVE_LINUX_LARGE_PAGES*/
+#endif /* defined(HAVE_MMAP) && !defined(HAVE_LINUX_LARGE_PAGES) && !defined(_WIN32) */
 
 #ifdef _WIN32
+static size_t my_large_page_size= 0;
 
 /* Windows-specific function to determine the size of large pages */
 
-uint my_get_large_page_size_int(void)
+void my_get_large_page_size(void)
 {
   SYSTEM_INFO	system_info;
   DBUG_ENTER("my_get_large_page_size_int");
 
   GetSystemInfo(&system_info);
 
-  DBUG_RETURN(system_info.dwPageSize);
+  my_large_page_size= system_info.dwPageSize;
+  DBUG_VOID_RETURN;
 }
 
 /* Windows-specific large pages allocator */
@@ -371,6 +337,7 @@ uint my_get_large_page_size_int(void)
 uchar* my_large_malloc_int(size_t *size, myf my_flags)
 {
   DBUG_ENTER("my_large_malloc_int");
+  void* ptr;
 
   /* Align block size to my_large_page_size */
   *size= MY_ALIGN(*size, (size_t) my_large_page_size);
