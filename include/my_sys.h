@@ -188,12 +188,16 @@ extern size_t my_next_large_page_size(size_t sz, int *start);
 #define my_next_large_page_size(A,B) (0)
 #endif
 
+#if defined(_WIN32) || (defined(HAVE_MMAP) && !defined(HAVE_LINUX_LARGE_PAGES))
+extern void my_get_large_page_size(void);
+#else
+#define my_get_large_page_size() do {} while(0)
+#endif
+
 #ifdef HAVE_LARGE_PAGE_OPTION
-extern uint my_get_large_page_size(void);
 extern uchar * my_large_malloc(size_t *size, myf my_flags);
 extern void my_large_free(void *ptr, size_t size);
 #else
-#define my_get_large_page_size() (0)
 #define my_large_malloc(A,B) my_malloc_lock(*(A),(B))
 #define my_large_free(A,B) my_free_lock((A))
 #endif /* HAVE_LARGE_PAGE_OPTION */
@@ -256,10 +260,8 @@ extern void (*proc_info_hook)(void *, const PSI_stage_info *, PSI_stage_info *,
 
 #ifdef HAVE_LARGE_PAGE_OPTION
 extern my_bool my_use_large_pages;
-extern uint    my_large_page_size;
 #else
 #define my_use_large_pages 0
-#define my_large_page_size 0
 #endif
 
 /* charsets */

@@ -3929,6 +3929,9 @@ static int init_common_variables()
     my_use_large_pages= 1;
     my_get_large_page_sizes(my_large_page_sizes);
   }
+  /* used by large allocations even if not large pages.
+     Uses my_use_large_pages. */
+  my_get_large_page_size();
 #endif /* HAVE_LARGE_PAGE_OPTION */
 #ifdef HAVE_SOLARIS_LARGE_PAGES
 #define LARGE_PAGESIZE (4*1024*1024)  /* 4MB */
