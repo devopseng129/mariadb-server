@@ -844,8 +844,16 @@ size_t init_pagecache(PAGECACHE *pagecache, size_t use_mem,
                      sizeof(PAGECACHE_BLOCK_LINK*)* (changed_blocks_hash_size*2))) +
            (blocks << pagecache->shift) > use_mem && blocks > 8)
       blocks--;
-    /* Allocate memory for cache page buffers */
-    pagecache->mem_size= blocks * pagecache->block_size;
+    /* Large pages, dropping the size down fails to catch when aria_pagecache_buffer_size
+       is the same as the large page size. */
+    if (my_use_large_pages)
+    {
+      pagecache->mem_size= use_mem;
+    }
+    else
+    {
+      pagecache->mem_size= blocks * pagecache->block_size;
+    }
     if ((pagecache->block_mem=
       my_large_malloc(&pagecache->mem_size, MYF(MY_WME))))
     {
@@ -873,6 +881,10 @@ size_t init_pagecache(PAGECACHE *pagecache, size_t use_mem,
         break;
       my_large_free(pagecache->block_mem, pagecache->mem_size);
       pagecache->block_mem= 0;
+    }
+    if (my_use_large_pages)
+    {
+      use_mem= use_mem / 4*3;
     }
     blocks= blocks / 4*3;
   }

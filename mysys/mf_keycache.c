@@ -546,7 +546,16 @@ int init_simple_key_cache(SIMPLE_KEY_CACHE_CB *keycache,
                        sizeof(BLOCK_LINK*)* (changed_blocks_hash_size*2))) +
              ((size_t) blocks * keycache->key_cache_block_size) > use_mem && blocks > 8)
         blocks--;
-      keycache->allocated_mem_size= blocks * keycache->key_cache_block_size;
+      /* Large pages, dropping the size down fails to catch when key_cache_size
+         is the same as the large page size. */
+      if (my_use_large_pages)
+      {
+        keycache->allocated_mem_size= use_mem;
+      }
+      else
+      {
+        keycache->allocated_mem_size= blocks * keycache->key_cache_block_size;
+      }
       if ((keycache->block_mem=my_large_malloc(&keycache->allocated_mem_size, MYF(0))))
       {
         /*
@@ -578,6 +587,10 @@ int init_simple_key_cache(SIMPLE_KEY_CACHE_CB *keycache,
         my_error(EE_OUTOFMEMORY, MYF(ME_FATAL),
                  blocks * keycache->key_cache_block_size);
         goto err;
+      }
+      if (my_use_large_pages)
+      {
+        use_mem= use_mem / 4 * 3;
       }
       blocks= blocks / 4*3;
     }
