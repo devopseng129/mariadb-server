@@ -179,12 +179,12 @@ extern char *my_strndup(const char *from, size_t length, myf MyFlags);
 
 #ifdef HAVE_LARGE_PAGE_OPTION
 extern uint my_get_large_page_size(void);
-extern uchar * my_large_malloc(size_t size, myf my_flags);
-extern void my_large_free(uchar *ptr);
+extern uchar * my_large_malloc(size_t *size, myf my_flags);
+extern void my_large_free(void *ptr, size_t size);
 #else
 #define my_get_large_page_size() (0)
-#define my_large_malloc(A,B) my_malloc_lock((A),(B))
-#define my_large_free(A) my_free_lock((A))
+#define my_large_malloc(A,B) my_malloc_lock(*(A),(B))
+#define my_large_free(A,B) my_free_lock((A))
 #endif /* HAVE_LARGE_PAGE_OPTION */
 
 void my_init_atomic_write(void);
