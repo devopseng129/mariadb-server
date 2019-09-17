@@ -3238,10 +3238,15 @@ row_log_allocate(
 
 	if (log_tmp_is_encrypted()) {
 		ulint size = srv_sort_buf_size;
-		log->crypt_head = static_cast<byte *>(os_mem_alloc_large(&size));
-		log->crypt_tail = static_cast<byte *>(os_mem_alloc_large(&size));
+		log->crypt_head = static_cast<byte *>(my_large_malloc(&size, MYF(MY_WME)));
+		if (!log->crypt_head) {
+			row_log_free(log);
+			DBUG_RETURN(false);
+		}
 
-		if (!log->crypt_head || !log->crypt_tail) {
+		log->crypt_tail = static_cast<byte *>(my_large_malloc(&size, MYF(MY_WME)));
+		if (!log->crypt_tail) {
+			my_large_free(log->crypt_head, size);
 			row_log_free(log);
 			DBUG_RETURN(false);
 		}
@@ -3271,11 +3276,11 @@ row_log_free(
 	row_merge_file_destroy_low(log->fd);
 
 	if (log->crypt_head) {
-		os_mem_free_large(log->crypt_head, srv_sort_buf_size);
+		my_large_free(log->crypt_head, srv_sort_buf_size);
 	}
 
 	if (log->crypt_tail) {
-		os_mem_free_large(log->crypt_tail, srv_sort_buf_size);
+		my_large_free(log->crypt_tail, srv_sort_buf_size);
 	}
 
 	mutex_free(&log->mutex);
