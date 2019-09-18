@@ -6566,7 +6566,7 @@ struct my_option my_long_options[]=
    "mysql.gtid_slave_pos",
    &gtid_pos_auto_engines, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0 },
-#ifdef HAVE_LARGE_PAGE_OPTION
+#ifdef HAVE_SOLARIS_LARGE_PAGES
   {"super-large-pages", 0, "Enable support for super large pages.",
    &opt_super_large_pages, &opt_super_large_pages, 0,
    GET_BOOL, OPT_ARG, 0, 0, 1, 0, 1, 0},
