@@ -1946,7 +1946,7 @@ buf_pool_init_instance(
 					}
 
 					buf_pool->allocator.deallocate_large_dodump(
-						chunk->mem, &chunk->mem_pfx, chunk->mem_size());
+						chunk->mem, &chunk->mem_pfx);
 				}
 				ut_free(buf_pool->chunks);
 				buf_pool_mutex_exit(buf_pool);
@@ -2087,7 +2087,7 @@ buf_pool_free_instance(
 		}
 
 		buf_pool->allocator.deallocate_large_dodump(
-			chunk->mem, &chunk->mem_pfx, chunk->mem_size());
+			chunk->mem, &chunk->mem_pfx);
 	}
 
 	for (ulint i = BUF_FLUSH_LRU; i < BUF_FLUSH_N_TYPES; ++i) {
@@ -2943,7 +2943,7 @@ withdraw_retry:
 				}
 
 				buf_pool->allocator.deallocate_large_dodump(
-					chunk->mem, &chunk->mem_pfx, chunk->mem_size());
+					chunk->mem, &chunk->mem_pfx);
 
 				sum_freed += chunk->size;
 
